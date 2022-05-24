@@ -3,8 +3,6 @@ import numpy as np
 import time
 import platform
 
-def f_dist(p1, p2) :
-    return (p1[0] - p2[0]) * (p1[0] - p2[0]) + (p1[1] - p2[1]) * (p1[1] - p2[1])
 
 def output_keypoints(frame, net, threshold, BODY_PARTS, now_frame, total_frame):
     global points
@@ -91,60 +89,60 @@ def output_keypoints_with_lines_video(proto_file, weights_file, threshold, BODY_
 
     capture = cv2.VideoCapture(0)
 
-    while(True):
-        points.clear()
-        ret, frame_boy = capture.read()
-        now_frame_boy = capture.get(cv2.CAP_PROP_POS_FRAMES)
-        total_frame_boy = capture.get(cv2.CAP_PROP_FRAME_COUNT)
-        gray_frame_boy = cv2.cvtColor(frame_boy, cv2.COLOR_RGB2GRAY)
+    start = time.time()
 
-        frame_boy = output_keypoints(frame=frame_boy, net=net, threshold=threshold,
-                                     BODY_PARTS=BODY_PARTS, now_frame=now_frame_boy, total_frame=total_frame_boy)
-        frame_boy = output_keypoints_with_lines(
-            frame=frame_boy, POSE_PAIRS=POSE_PAIRS)
-        if points[14] is not None :
+    ret, frame_boy = capture.read()
+
+    while True:
+        '''
+        wait_img = np.full((512, 512, 3), fill_value=255, dtype=np.uint8)
+        ttime = 3.0 - (time.time() - start)
+        text = str(ttime)
+        org = (50, 100)
+        font = cv2.FONT_HERSHEY_SIMPLEX
+        cv2.putText(wait_img, text, org, font, 1, (255, 0, 0), 2)
+        cv2.imshow(wait_img)
+        '''
+        print(time.time() - start)
+        if time.time() - start > 3.0:
             break
 
+    now_frame_boy = capture.get(cv2.CAP_PROP_POS_FRAMES)
+    total_frame_boy = capture.get(cv2.CAP_PROP_FRAME_COUNT)
+    ret, frame_boy = capture.read()
+
+    frame_boy = output_keypoints(frame=frame_boy, net=net, threshold=threshold,
+                                 BODY_PARTS=BODY_PARTS, now_frame=now_frame_boy, total_frame=total_frame_boy)
+    frame_boy = output_keypoints_with_lines(
+        frame=frame_boy, POSE_PAIRS=POSE_PAIRS)
+    cv2.imshow("Output_Keypoints", frame_boy)
+    cv2.waitKey()
+    gray_frame_boy = cv2.cvtColor(frame_boy, cv2.COLOR_RGB2GRAY)
     # ---------------------------
-    temp_gradient = 80
+    temp_gradient = 50
     tuple_gradient = (temp_gradient, temp_gradient)
     # ---------------------------
     print(points[14])
 
-    template = gray_frame_boy[points[14][1] - temp_gradient : points[14][1] + temp_gradient,
-                              points[14][0] - temp_gradient : points[14][0] + temp_gradient].copy()
-    cv2.imshow("test", frame_boy)
-    cv2.waitKey()
-    cv2.imshow("test2", template)
-    cv2.waitKey()
-
-    maxloc = list(range(0,3))
-    p_dist = list(range(0,3)) # 0 - 1, 1 - 2, 2 - 0
+    template = gray_frame_boy[(points[14][0] - temp_gradient, points[14][1] - temp_gradient),
+                              (points[14][0] + temp_gradient, points[14][1] + temp_gradient)]
+    cv2.imshow(template)
     while True:
         ret, frame_boy = capture.read()
         gray_frame_boy = cv2.cvtColor(frame_boy, cv2.COLOR_RGB2GRAY)
-        #cv2.TM_CCORR_NORMED, cv2.TM_CCOEFF, cv2.TM_CCOEFF_NORMED	
-        res_1 = cv2.matchTemplate(gray_frame_boy, template, cv2.TM_CCORR_NORMED)
-        res_2 = cv2.matchTemplate(gray_frame_boy, template, cv2.TM_CCOEFF)
-        res_3 = cv2.matchTemplate(gray_frame_boy, template, cv2.TM_CCOEFF_NORMED)
-        _, _, _, maxloc[0] = cv2.minMaxLoc(res_1)
-        _, _, _, maxloc[1] = cv2.minMaxLoc(res_2)
-        _, _, _, maxloc[2] = cv2.minMaxLoc(res_3)
-
-        p_dist[0] = f_dist(maxloc[0], maxloc[1])
-        p_dist[1] = f_dist(maxloc[1], maxloc[2])
-        p_dist[2] = f_dist(maxloc[2], maxloc[0])
-        
-        p_index = p_dist.index(min(p_dist))
-
+        res = cv2.matchTemplate(gray_frame_boy, template, cv2.TM_CCOEFF_NORMED)
+        _, maxv, _, maxloc = cv2.minMaxLoc(res)
         th = temp_gradient * 2
         tw = temp_gradient * 2
-        cv2.rectangle(frame_boy, (int((maxloc[p_index][0] + maxloc[(p_index + 1) % 3][0]) / 2), int((maxloc[p_index][1] + maxloc[(p_index + 1) % 3][1]) / 2)),
-                      (int((maxloc[p_index][0] + maxloc[(p_index + 1) % 3][0]) / 2) + tw, int((maxloc[p_index][1] + maxloc[(p_index + 1) % 3][1]) / 2) + th), (0, 0, 255), 2)
+        cv2.rectangle(frame_boy, maxloc,
+                      (maxloc[0] + tw, maxloc[1] + th), (0, 0, 255), 2)
 
         cv2.imshow("frame_boy", frame_boy)
+        cv2.imshow("gray_frame_boy", gray_frame_boy)
+        cv2.imshow("res", res)
+
         '''
-        template = res_1
+        template = res
         '''
 
         if cv2.waitKey(10) == 27:
@@ -181,6 +179,7 @@ POSE_PAIRS_BODY_25 = [[0, 1], [0, 15], [0, 16], [1, 2], [1, 5], [1, 8], [8, 9], 
                           15, 17], [16, 18], [14, 21], [19, 21], [20, 21],
                       [11, 24], [22, 24], [23, 24]]
 
+<<<<<<< HEAD
 # 신경 네트워크의 구조를 지정하는 prototxt 파일 (다양한 계층이 배열되는 방법 등)
 protoFile_mpi = "./Github/HCI/models/pose/mpi/pose_deploy_linevec.prototxt"
 protoFile_mpi_faster = "./Github/HCI/models/pose/mpi/pose_deploy_linevec_faster_4_stages.prototxt"
@@ -191,6 +190,29 @@ protoFile_body_25 = "./Github/HCI/models/pose/body_25/pose_deploy.prototxt"
 weightsFile_mpi = "./Github/HCI/models/pose/mpi/pose_iter_160000.caffemodel"
 weightsFile_coco = "./Github/HCI/models/pose/coco/pose_iter_440000.caffemodel"
 weightsFile_body_25 = "./Github/HCI/models/pose/body_25/pose_iter_584000.caffemodel"
+=======
+if platform.system() == "Linux" :
+    # 신경 네트워크의 구조를 지정하는 prototxt 파일 (다양한 계층이 배열되는 방법 등)
+    protoFile_mpi = "HCI\\models\\pose\\mpi\\pose_deploy_linevec.prototxt"
+    protoFile_mpi_faster = "HCI\\models\\pose\\mpi\\pose_deploy_linevec_faster_4_stages.prototxt"
+    protoFile_coco = "HCI\\models\\pose\\coco\\pose_deploy_linevec.prototxt"
+    protoFile_body_25 = "HCI\\models\\pose\\body_25\\pose_deploy.prototxt"
+
+    # 훈련된 모델의 weight 를 저장하는 caffemodel 파일
+    weightsFile_mpi = "HCI\\models\\pose\\mpi\\pose_iter_160000.caffemodel"
+    weightsFile_coco = "HCI\\models\\pose\\coco\\pose_iter_440000.caffemodel"
+    weightsFile_body_25 = "HCI\\models\\pose\\body_25\\pose_iter_584000.caffemodel"
+
+elif platform.system() == "Windows" :
+    protoFile_mpi = "HCI\\models\\pose\\mpi\\pose_deploy_linevec.prototxt"
+    protoFile_mpi_faster = "HCI\\models\\pose\\mpi\\pose_deploy_linevec_faster_4_stages.prototxt"
+    protoFile_coco = "HCI\\models\\pose\\coco\\pose_deploy_linevec.prototxt"
+    protoFile_body_25 = "HCI\\models\\pose\\body_25\\pose_deploy.prototxt"
+
+    weightsFile_mpi = "HCI\\models\\pose\\mpi\\pose_iter_160000.caffemodel"
+    weightsFile_coco = "HCI\\models\\pose\\coco\\pose_iter_440000.caffemodel"
+    weightsFile_body_25 = "HCI\\models\\pose\\body_25\\pose_iter_584000.caffemodel"
+>>>>>>> e60aebfe66905103939f6f618f18c597bcee8998
 
 # 키포인트를 저장할 빈 리스트
 points = []
