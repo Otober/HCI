@@ -1,3 +1,5 @@
 *.prototxt
 
 *.caffemodel
+
+*.zip
