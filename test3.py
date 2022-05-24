@@ -7,6 +7,8 @@ import platform
 def output_keypoints(frame, net, threshold, BODY_PARTS, now_frame, total_frame):
     global points
 
+    print()
+    
     # 입력 이미지의 사이즈 정의
     image_height = 368
     image_width = 368
