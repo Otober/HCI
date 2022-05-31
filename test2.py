@@ -136,18 +136,19 @@ POSE_PAIRS_BODY_25 = [[0, 1], [0, 15], [0, 16], [1, 2], [1, 5], [1, 8], [8, 9], 
                       [11, 24], [22, 24], [23, 24]]
 
 # 신경 네트워크의 구조를 지정하는 prototxt 파일 (다양한 계층이 배열되는 방법 등)
-protoFile_mpi = "HCI\\models\\pose\\mpi\\pose_deploy_linevec.prototxt"
-protoFile_mpi_faster = "HCI\\models\\pose\\mpi\\pose_deploy_linevec_faster_4_stages.prototxt"
-protoFile_coco = "HCI\\models\\pose\\coco\\pose_deploy_linevec.prototxt"
-protoFile_body_25 = "HCI\\models\\pose\\body_25\\pose_deploy.prototxt"
+protoFile_mpi = "models\\pose\\mpi\\pose_deploy_linevec.prototxt"
+protoFile_mpi_faster = "models\\pose\\mpi\\pose_deploy_linevec_faster_4_stages.prototxt"
+protoFile_coco = "models\\pose\\coco\\pose_deploy_linevec.prototxt"
+protoFile_body_25 = "models\\pose\\body_25\\pose_deploy.prototxt"
 
 # 훈련된 모델의 weight 를 저장하는 caffemodel 파일
-weightsFile_mpi = "HCI\\models\\pose\\mpi\\pose_iter_160000.caffemodel"
-weightsFile_coco = "HCI\\models\\pose\\coco\\pose_iter_440000.caffemodel"
-weightsFile_body_25 = "HCI\\models\\pose\\body_25\\pose_iter_584000.caffemodel"
+weightsFile_mpi = "models\\pose\\mpi\\pose_iter_160000.caffemodel"
+weightsFile_coco = "models\\pose\\coco\\pose_iter_440000.caffemodel"
+weightsFile_body_25 = "models\\pose\\body_25\\pose_iter_584000.caffemodel"
 
 # 비디오 경로
 man = "C:\\Users\\user\\Pictures\\Saved Pictures\\sample_video\\man.mp4"  # (출처: https://pixabay.com/videos/id-25553/)
+#의미없음
 
 # 키포인트를 저장할 빈 리스트
 points = []

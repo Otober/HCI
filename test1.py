@@ -12,8 +12,8 @@ POSE_PAIRS = [ ["Head", "Neck"], ["Neck", "RShoulder"], ["RShoulder", "RElbow"],
                 ["RKnee", "RAnkle"], ["Chest", "LHip"], ["LHip", "LKnee"], ["LKnee", "LAnkle"] ]
     
 # 각 파일 path
-protoFile = "./HCI/pose_deploy_584000.prototxt"
-weightsFile = "./HCI/pose_deploy_584000.caffemodel"
+protoFile = "./pose_deploy_584000.prototxt"
+weightsFile = "./pose_deploy_584000.caffemodel"
  
 # 위의 path에 있는 network 불러오기
 net = cv2.dnn.readNetFromCaffe(protoFile, weightsFile)

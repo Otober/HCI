@@ -139,7 +139,6 @@ def output_keypoints_with_lines_video(proto_file, weights_file, threshold, BODY_
 
         for i in range(0, 3) :
             res[i] = cv2.matchTemplate(BGR_frame_boy[i], BGR_template[i], cv2.TM_CCOEFF_NORMED)
-        
         _, _, _, maxloc_t[0] = cv2.minMaxLoc(res[0])
         _, _, _, maxloc_t[1] = cv2.minMaxLoc(res[1])
         _, _, _, maxloc_t[2] = cv2.minMaxLoc(res[2])
@@ -148,20 +147,17 @@ def output_keypoints_with_lines_video(proto_file, weights_file, threshold, BODY_
         
         n = maxloc[0]
         m = maxloc[1]
-        cv2.rectangle(frame_boy, (n, m), (n + 10, m + 10), (255, 255, 255), 2)
-        for i in range(m - 10, m + 10) :
-            for j in range(n - 10, n + 10) :
-                temp = 0.0
-                for k in range(0, 3) :
-                    temp += res[k][i][j]
-                if tmax < temp :
-                    maxloc = (i, j )  
-                    tmax = temp
+        cv2.rectangle(frame_boy, (n-5, m - 5), (n + 5, m + 5), (255, 255, 255), 2)
         
+        range_gradient = 20
 
-        #cv2.rectangle(frame_boy, (n, m), (n, m), (0, 0, 0) , 2)
-
-        cv2.rectangle(frame_boy, maxloc, (maxloc[0] + temp_gradient * 2, maxloc[1] + temp_gradient * 2), (255, 255, 255), 2)
+        for i in range(n - temp_gradient - range_gradient, n - temp_gradient + range_gradient):
+            for j in range(m - temp_gradient - range_gradient, m - temp_gradient + range_gradient) :
+                temp = res[0][j][i] + res[1][j][i] + res[2][j][i]
+                if tmax < temp :
+                    tmax = temp
+                    maxloc = (i + temp_gradient, j + temp_gradient)
+        cv2.rectangle(frame_boy, (maxloc[0] - temp_gradient, maxloc[1] - temp_gradient), (maxloc[0] + temp_gradient, maxloc[1] + temp_gradient), (255, 255, 255), 2)
 
 
         cv2.rectangle(frame_boy, maxloc_t[0], (maxloc_t[0][0] + temp_gradient * 2, maxloc_t[0][1] + temp_gradient * 2), (255, 0, 0), 2)
@@ -205,15 +201,15 @@ POSE_PAIRS_BODY_25 = [[0, 1], [0, 15], [0, 16], [1, 2], [1, 5], [1, 8], [8, 9], 
                       [11, 24], [22, 24], [23, 24]]
 
 # 신경 네트워크의 구조를 지정하는 prototxt 파일 (다양한 계층이 배열되는 방법 등)
-protoFile_mpi = "./Github/HCI/models/pose/mpi/pose_deploy_linevec.prototxt"
-protoFile_mpi_faster = "./Github/HCI/models/pose/mpi/pose_deploy_linevec_faster_4_stages.prototxt"
-protoFile_coco = "./Github/HCI/models/pose/coco/pose_deploy_linevec.prototxt"
-protoFile_body_25 = "./Github/HCI/models/pose/body_25/pose_deploy.prototxt"
+protoFile_mpi = "./models/pose/mpi/pose_deploy_linevec.prototxt"
+protoFile_mpi_faster = "./models/pose/mpi/pose_deploy_linevec_faster_4_stages.prototxt"
+protoFile_coco = "./models/pose/coco/pose_deploy_linevec.prototxt"
+protoFile_body_25 = "./models/pose/body_25/pose_deploy.prototxt"
 
 # 훈련된 모델의 weight 를 저장하는 caffemodel 파일
-weightsFile_mpi = "./Github/HCI/models/pose/mpi/pose_iter_160000.caffemodel"
-weightsFile_coco = "./Github/HCI/models/pose/coco/pose_iter_440000.caffemodel"
-weightsFile_body_25 = "./Github/HCI/models/pose/body_25/pose_iter_584000.caffemodel"
+weightsFile_mpi = "./models/pose/mpi/pose_iter_160000.caffemodel"
+weightsFile_coco = "./models/pose/coco/pose_iter_440000.caffemodel"
+weightsFile_body_25 = "./models/pose/body_25/pose_iter_584000.caffemodel"
 
 # 키포인트를 저장할 빈 리스트
 points = []

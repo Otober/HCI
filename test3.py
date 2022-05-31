@@ -97,8 +97,8 @@ def output_keypoints_with_lines_video(proto_file, weights_file, threshold, BODY_
         ret, frame_boy = capture.read()
         now_frame_boy = capture.get(cv2.CAP_PROP_POS_FRAMES)
         total_frame_boy = capture.get(cv2.CAP_PROP_FRAME_COUNT)
-        gray_frame_boy = cv2.cvtColor(frame_boy, cv2.COLOR_RGB2GRAY)
-
+        #gray_frame_boy = cv2.cvtColor(frame_boy, cv2.COLOR_RGB2GRAY)
+        gray_frame_boy = frame_boy.copy()
         frame_boy = output_keypoints(frame=frame_boy, net=net, threshold=threshold,
                                      BODY_PARTS=BODY_PARTS, now_frame=now_frame_boy, total_frame=total_frame_boy)
         frame_boy = output_keypoints_with_lines(
@@ -115,54 +115,42 @@ def output_keypoints_with_lines_video(proto_file, weights_file, threshold, BODY_
     gray_template = gray_frame_boy[points[14][1] - temp_gradient : points[14][1] + temp_gradient,
                               points[14][0] - temp_gradient : points[14][0] + temp_gradient].copy()
     
-    template = frame_boy[points[14][1] - temp_gradient : points[14][1] + temp_gradient,
+    template = gray_frame_boy[points[14][1] - temp_gradient : points[14][1] + temp_gradient,
                               points[14][0] - temp_gradient : points[14][0] + temp_gradient].copy()
-
+    template_B,template_G, template_R = cv2.split(template)
     cv2.imshow("test", frame_boy)
     cv2.waitKey()
     cv2.imshow("test2", gray_template)
     cv2.waitKey()
 
     maxloc = list(range(0,6))
-    p_dist = list(range(0,3)) # 0 - 1, 1 - 2, 2 - 0
+    maxval = list(range(0,3)) # 0 - 1, 1 - 2, 2 - 0
+    res = list(range(0,3))
+
+    cv2.imshow("B", template_B)
+    cv2.imshow("G", template_G)
+    cv2.imshow("R", template_R)
+    
     while True:
         ret, frame_boy = capture.read()
         gray_frame_boy = cv2.cvtColor(frame_boy, cv2.COLOR_RGB2GRAY)
-        #cv2.TM_CCORR_NORMED, cv2.TM_CCOEFF, cv2.TM_CCOEFF_NORMED	
-        res_1 = cv2.matchTemplate(gray_frame_boy, gray_template, cv2.TM_CCORR_NORMED)
-        res_2 = cv2.matchTemplate(gray_frame_boy, gray_template, cv2.TM_CCOEFF)
-        res_3 = cv2.matchTemplate(gray_frame_boy, gray_template, cv2.TM_CCOEFF_NORMED)
+        #cv2.TM_CCORR_NORMED, cv2.TM_CCOEFF, cv2.TM_CCOEFF_NORMED
+        
 
-        res_4 = cv2.matchTemplate(gray_frame_boy, gray_template, cv2.TM_SQDIFF)
-        res_5 = cv2.matchTemplate(gray_frame_boy, gray_template, cv2.TM_SQDIFF_NORMED)
-        res_6 = cv2.matchTemplate(gray_frame_boy, gray_template, cv2.TM_CCORR)
+        print(now_frame_boy)
 
-        _, _, _, maxloc[0] = cv2.minMaxLoc(res_1)
-        _, _, _, maxloc[1] = cv2.minMaxLoc(res_2)
-        _, _, _, maxloc[2] = cv2.minMaxLoc(res_3)
+        split_B, split_G, split_R = cv2.split(frame_boy)
 
-        _, _, _, maxloc[5] = cv2.minMaxLoc(res_6)
-        _, _, maxloc[3], _ = cv2.minMaxLoc(res_4)
-        _, _, maxloc[4], _ = cv2.minMaxLoc(res_5)
+        res[0] = cv2.matchTemplate(split_B, template_B, cv2.TM_CCOEFF_NORMED)
+        res[1] = cv2.matchTemplate(split_G, template_G, cv2.TM_CCOEFF_NORMED)
+        res[2] = cv2.matchTemplate(split_R, template_R, cv2.TM_CCOEFF_NORMED)
 
-        p_dist[0] = f_dist(maxloc[0], maxloc[1])
-        p_dist[1] = f_dist(maxloc[1], maxloc[2])
-        p_dist[2] = f_dist(maxloc[2], maxloc[0])
+        _, maxval[0], _, maxloc[0] = cv2.minMaxLoc(res[0])
+        _, maxval[1], _, maxloc[1] = cv2.minMaxLoc(res[1])
+        _, maxval[2], _, maxloc[2] = cv2.minMaxLoc(res[2])
 
-        p_index = p_dist.index(min(p_dist))
+        temp = 0.0
 
-        th = temp_gradient * 2
-        tw = temp_gradient * 2
-        cv2.rectangle(frame_boy, maxloc[0], (maxloc[0][0] + th, maxloc[0][1] + tw), (255, 0, 0), 2)
-        cv2.rectangle(frame_boy, maxloc[1], (maxloc[1][0] + th, maxloc[1][1] + tw), (0, 255, 0), 2)
-        cv2.rectangle(frame_boy, maxloc[2], (maxloc[2][0] + th, maxloc[2][1] + tw), (0, 0, 255), 2)
-
-        cv2.circle(frame_boy, (maxloc[5][0] + temp_gradient, maxloc[5][1] + temp_gradient), temp_gradient, (255, 0, 0))
-        cv2.circle(frame_boy, (maxloc[3][0] + temp_gradient, maxloc[3][1] + temp_gradient), temp_gradient, (0, 255, 0))
-        cv2.circle(frame_boy, (maxloc[4][0] + temp_gradient, maxloc[4][1] + temp_gradient), temp_gradient, (0, 0, 255))
-
-        cv2.rectangle(frame_boy, (int((maxloc[p_index][0] + maxloc[(p_index + 1) % 3][0]) / 2), int((maxloc[p_index][1] + maxloc[(p_index + 1) % 3][1]) / 2)),
-                      (int((maxloc[p_index][0] + maxloc[(p_index + 1) % 3][0]) / 2) + tw, int((maxloc[p_index][1] + maxloc[(p_index + 1) % 3][1]) / 2) + th), (0, 0, 0), 2)
 
         cv2.imshow("frame_boy", frame_boy)
 
@@ -201,15 +189,15 @@ POSE_PAIRS_BODY_25 = [[0, 1], [0, 15], [0, 16], [1, 2], [1, 5], [1, 8], [8, 9], 
                       [11, 24], [22, 24], [23, 24]]
 
 # 신경 네트워크의 구조를 지정하는 prototxt 파일 (다양한 계층이 배열되는 방법 등)
-protoFile_mpi = "./Github/HCI/models/pose/mpi/pose_deploy_linevec.prototxt"
-protoFile_mpi_faster = "./Github/HCI/models/pose/mpi/pose_deploy_linevec_faster_4_stages.prototxt"
-protoFile_coco = "./Github/HCI/models/pose/coco/pose_deploy_linevec.prototxt"
-protoFile_body_25 = "./Github/HCI/models/pose/body_25/pose_deploy.prototxt"
+protoFile_mpi = "./models/pose/mpi/pose_deploy_linevec.prototxt"
+protoFile_mpi_faster = "./models/pose/mpi/pose_deploy_linevec_faster_4_stages.prototxt"
+protoFile_coco = "./models/pose/coco/pose_deploy_linevec.prototxt"
+protoFile_body_25 = "./models/pose/body_25/pose_deploy.prototxt"
 
 # 훈련된 모델의 weight 를 저장하는 caffemodel 파일
-weightsFile_mpi = "./Github/HCI/models/pose/mpi/pose_iter_160000.caffemodel"
-weightsFile_coco = "./Github/HCI/models/pose/coco/pose_iter_440000.caffemodel"
-weightsFile_body_25 = "./Github/HCI/models/pose/body_25/pose_iter_584000.caffemodel"
+weightsFile_mpi = "./models/pose/mpi/pose_iter_160000.caffemodel"
+weightsFile_coco = "./models/pose/coco/pose_iter_440000.caffemodel"
+weightsFile_body_25 = "./models/pose/body_25/pose_iter_584000.caffemodel"
 
 # 키포인트를 저장할 빈 리스트
 points = []
