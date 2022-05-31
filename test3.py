@@ -6,6 +6,7 @@ import time
 def f_dist(p1, p2) :
     return (p1[0] - p2[0]) * (p1[0] - p2[0]) + (p1[1] - p2[1]) * (p1[1] - p2[1])
 
+
 def output_keypoints(frame, net, threshold, BODY_PARTS, now_frame, total_frame):
     global points
 
@@ -111,11 +112,15 @@ def output_keypoints_with_lines_video(proto_file, weights_file, threshold, BODY_
     # ---------------------------
     print(points[14])
 
-    template = gray_frame_boy[points[14][1] - temp_gradient : points[14][1] + temp_gradient,
+    gray_template = gray_frame_boy[points[14][1] - temp_gradient : points[14][1] + temp_gradient,
                               points[14][0] - temp_gradient : points[14][0] + temp_gradient].copy()
+    
+    template = frame_boy[points[14][1] - temp_gradient : points[14][1] + temp_gradient,
+                              points[14][0] - temp_gradient : points[14][0] + temp_gradient].copy()
+
     cv2.imshow("test", frame_boy)
     cv2.waitKey()
-    cv2.imshow("test2", template)
+    cv2.imshow("test2", gray_template)
     cv2.waitKey()
 
     maxloc = list(range(0,6))
@@ -124,13 +129,13 @@ def output_keypoints_with_lines_video(proto_file, weights_file, threshold, BODY_
         ret, frame_boy = capture.read()
         gray_frame_boy = cv2.cvtColor(frame_boy, cv2.COLOR_RGB2GRAY)
         #cv2.TM_CCORR_NORMED, cv2.TM_CCOEFF, cv2.TM_CCOEFF_NORMED	
-        res_1 = cv2.matchTemplate(gray_frame_boy, template, cv2.TM_CCORR_NORMED)
-        res_2 = cv2.matchTemplate(gray_frame_boy, template, cv2.TM_CCOEFF)
-        res_3 = cv2.matchTemplate(gray_frame_boy, template, cv2.TM_CCOEFF_NORMED)
+        res_1 = cv2.matchTemplate(gray_frame_boy, gray_template, cv2.TM_CCORR_NORMED)
+        res_2 = cv2.matchTemplate(gray_frame_boy, gray_template, cv2.TM_CCOEFF)
+        res_3 = cv2.matchTemplate(gray_frame_boy, gray_template, cv2.TM_CCOEFF_NORMED)
 
-        res_4 = cv2.matchTemplate(gray_frame_boy, template, cv2.TM_SQDIFF)
-        res_5 = cv2.matchTemplate(gray_frame_boy, template, cv2.TM_SQDIFF_NORMED)
-        res_6 = cv2.matchTemplate(gray_frame_boy, template, cv2.TM_CCORR)
+        res_4 = cv2.matchTemplate(gray_frame_boy, gray_template, cv2.TM_SQDIFF)
+        res_5 = cv2.matchTemplate(gray_frame_boy, gray_template, cv2.TM_SQDIFF_NORMED)
+        res_6 = cv2.matchTemplate(gray_frame_boy, gray_template, cv2.TM_CCORR)
 
         _, _, _, maxloc[0] = cv2.minMaxLoc(res_1)
         _, _, _, maxloc[1] = cv2.minMaxLoc(res_2)
@@ -160,9 +165,6 @@ def output_keypoints_with_lines_video(proto_file, weights_file, threshold, BODY_
                       (int((maxloc[p_index][0] + maxloc[(p_index + 1) % 3][0]) / 2) + tw, int((maxloc[p_index][1] + maxloc[(p_index + 1) % 3][1]) / 2) + th), (0, 0, 0), 2)
 
         cv2.imshow("frame_boy", frame_boy)
-        '''
-        template = res_1
-        '''
 
         if cv2.waitKey(10) == 27:
             break
