@@ -1,9 +1,11 @@
+from pipes import Template
 import cv2
 import numpy as np
 import time
 
 def f_dist(p1, p2) :
     return (p1[0] - p2[0]) * (p1[0] - p2[0]) + (p1[1] - p2[1]) * (p1[1] - p2[1])
+
 
 def output_keypoints(frame, net, threshold, BODY_PARTS, now_frame, total_frame):
     global points
@@ -105,46 +107,64 @@ def output_keypoints_with_lines_video(proto_file, weights_file, threshold, BODY_
             break
 
     # ---------------------------
-    temp_gradient = 80
+    temp_gradient = 50
     tuple_gradient = (temp_gradient, temp_gradient)
     # ---------------------------
     print(points[14])
 
-    template = gray_frame_boy[points[14][1] - temp_gradient : points[14][1] + temp_gradient,
+    gray_template = gray_frame_boy[points[14][1] - temp_gradient : points[14][1] + temp_gradient,
                               points[14][0] - temp_gradient : points[14][0] + temp_gradient].copy()
+    
+    template = frame_boy[points[14][1] - temp_gradient : points[14][1] + temp_gradient,
+                              points[14][0] - temp_gradient : points[14][0] + temp_gradient].copy()
+
     cv2.imshow("test", frame_boy)
     cv2.waitKey()
-    cv2.imshow("test2", template)
+    cv2.imshow("test2", gray_template)
     cv2.waitKey()
 
-    maxloc = list(range(0,3))
+    maxloc = list(range(0,6))
     p_dist = list(range(0,3)) # 0 - 1, 1 - 2, 2 - 0
     while True:
         ret, frame_boy = capture.read()
         gray_frame_boy = cv2.cvtColor(frame_boy, cv2.COLOR_RGB2GRAY)
         #cv2.TM_CCORR_NORMED, cv2.TM_CCOEFF, cv2.TM_CCOEFF_NORMED	
-        res_1 = cv2.matchTemplate(gray_frame_boy, template, cv2.TM_CCORR_NORMED)
-        res_2 = cv2.matchTemplate(gray_frame_boy, template, cv2.TM_CCOEFF)
-        res_3 = cv2.matchTemplate(gray_frame_boy, template, cv2.TM_CCOEFF_NORMED)
+        res_1 = cv2.matchTemplate(gray_frame_boy, gray_template, cv2.TM_CCORR_NORMED)
+        res_2 = cv2.matchTemplate(gray_frame_boy, gray_template, cv2.TM_CCOEFF)
+        res_3 = cv2.matchTemplate(gray_frame_boy, gray_template, cv2.TM_CCOEFF_NORMED)
+
+        res_4 = cv2.matchTemplate(gray_frame_boy, gray_template, cv2.TM_SQDIFF)
+        res_5 = cv2.matchTemplate(gray_frame_boy, gray_template, cv2.TM_SQDIFF_NORMED)
+        res_6 = cv2.matchTemplate(gray_frame_boy, gray_template, cv2.TM_CCORR)
+
         _, _, _, maxloc[0] = cv2.minMaxLoc(res_1)
         _, _, _, maxloc[1] = cv2.minMaxLoc(res_2)
         _, _, _, maxloc[2] = cv2.minMaxLoc(res_3)
 
+        _, _, _, maxloc[5] = cv2.minMaxLoc(res_6)
+        _, _, maxloc[3], _ = cv2.minMaxLoc(res_4)
+        _, _, maxloc[4], _ = cv2.minMaxLoc(res_5)
+
         p_dist[0] = f_dist(maxloc[0], maxloc[1])
         p_dist[1] = f_dist(maxloc[1], maxloc[2])
         p_dist[2] = f_dist(maxloc[2], maxloc[0])
-        
+
         p_index = p_dist.index(min(p_dist))
 
         th = temp_gradient * 2
         tw = temp_gradient * 2
+        cv2.rectangle(frame_boy, maxloc[0], (maxloc[0][0] + th, maxloc[0][1] + tw), (255, 0, 0), 2)
+        cv2.rectangle(frame_boy, maxloc[1], (maxloc[1][0] + th, maxloc[1][1] + tw), (0, 255, 0), 2)
+        cv2.rectangle(frame_boy, maxloc[2], (maxloc[2][0] + th, maxloc[2][1] + tw), (0, 0, 255), 2)
+
+        cv2.circle(frame_boy, (maxloc[5][0] + temp_gradient, maxloc[5][1] + temp_gradient), temp_gradient, (255, 0, 0))
+        cv2.circle(frame_boy, (maxloc[3][0] + temp_gradient, maxloc[3][1] + temp_gradient), temp_gradient, (0, 255, 0))
+        cv2.circle(frame_boy, (maxloc[4][0] + temp_gradient, maxloc[4][1] + temp_gradient), temp_gradient, (0, 0, 255))
+
         cv2.rectangle(frame_boy, (int((maxloc[p_index][0] + maxloc[(p_index + 1) % 3][0]) / 2), int((maxloc[p_index][1] + maxloc[(p_index + 1) % 3][1]) / 2)),
-                      (int((maxloc[p_index][0] + maxloc[(p_index + 1) % 3][0]) / 2) + tw, int((maxloc[p_index][1] + maxloc[(p_index + 1) % 3][1]) / 2) + th), (0, 0, 255), 2)
+                      (int((maxloc[p_index][0] + maxloc[(p_index + 1) % 3][0]) / 2) + tw, int((maxloc[p_index][1] + maxloc[(p_index + 1) % 3][1]) / 2) + th), (0, 0, 0), 2)
 
         cv2.imshow("frame_boy", frame_boy)
-        '''
-        template = res_1
-        '''
 
         if cv2.waitKey(10) == 27:
             break
