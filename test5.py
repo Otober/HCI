@@ -1,7 +1,7 @@
-from pipes import Template
 import cv2
-import numpy as np
+
 import time
+import random
 
 
 def f_dist(p1, p2):
@@ -75,10 +75,8 @@ def output_keypoints(frame, net, threshold, BODY_PARTS, now_frame, total_frame):
 
 
 def output_keypoints_with_lines(frame, POSE_PAIRS):
-    for pair in POSE_PAIRS:
-        part_a = pair[0]  # 0 (Head)
-        part_b = pair[1]  # 1 (Neck)
-
+    for pairs in POSE_PAIRS :
+        cv2.line(frame, points[pairs[0]], points[pairs[1]], (random.randrange(0, 256), random.randrange(0, 256), random.randrange(0, 256)), thickness=4, lineType=cv2.LINE_AA)
     return frame
 
 
@@ -91,82 +89,92 @@ def output_keypoints_with_lines_video(proto_file, weights_file, threshold, BODY_
     # net.setPreferableBackend(cv2.dnn.DNN_BACKEND_CUDA)
     # net.setPreferableTarget(cv2.dnn.DNN_TARGET_CUDA)
 
-    capture = cv2.VideoCapture(0)
-
+    #capture = cv2.VideoCapture(0)
+    #capture = cv2.VideoCapture('http://192.168.0.5:4747/mjpegfeed')
+    capture = cv2.VideoCapture('/home/kimdoyoung/Downloads/test1.mp4')
     while(True):
         points.clear()
         ret, frame_boy = capture.read()
+        frame_boy = cv2.resize(frame_boy,dsize = (0,0), fx = 0.5, fy = 0.5)
+        #frame_boy = cv2.resize(frame_boy, (480, 640))
+        template = frame_boy.copy()
+        #frame_boy = cv2.rotate(frame_boy, cv2.ROTATE_90_COUNTERCLOCKWISE)
         now_frame_boy = capture.get(cv2.CAP_PROP_POS_FRAMES)
         total_frame_boy = capture.get(cv2.CAP_PROP_FRAME_COUNT)
-        gray_frame_boy = cv2.cvtColor(frame_boy, cv2.COLOR_RGB2GRAY)
 
         frame_boy = output_keypoints(frame=frame_boy, net=net, threshold=threshold,
                                      BODY_PARTS=BODY_PARTS, now_frame=now_frame_boy, total_frame=total_frame_boy)
-        frame_boy = output_keypoints_with_lines(
-            frame=frame_boy, POSE_PAIRS=POSE_PAIRS)
-        if points[14] is not None:
+        frame_boy = output_keypoints_with_lines(frame=frame_boy, POSE_PAIRS=POSE_PAIRS)
+        if points[5] and points[2] and points[11] and points[8] is not None:
+            print(points[5])
+            print(points[2])
+            print(points[11])
+            print(points[8])
+            if(points[5][0] > points[2][0]):
+                points[5], points[2] = points[2], points[5]
+            if(points[11][0] > points[8][0]):
+                points[11], points[8] = points[8], points[11]
+            template = template[min(points[5][1], points[2][1]): max(points[11][1], points[8][1]), points[5][0]: points[2][0]].copy()
+            
             break
         print("None")
 
-    # ---------------------------
-    temp_gradient = 30
-    tuple_gradient = (temp_gradient, temp_gradient)
-    # ---------------------------
-    print(points[14])
-
-    gray_template = gray_frame_boy[points[14][1] - temp_gradient: points[14][1] + temp_gradient,
-                                   points[14][0] - temp_gradient: points[14][0] + temp_gradient].copy()
-
-    template = frame_boy[points[14][1] - temp_gradient: points[14][1] + temp_gradient,
-                         points[14][0] - temp_gradient: points[14][0] + temp_gradient].copy()
+    y_gradient = int((max(points[11][1], points[8][1]) - min(points[5][1], points[2][1])) / 2)
+    x_gradient = int((points[2][0] - points[5][0]) / 2)
 
     BGR_template = list(range(0, 3))
     BGR_frame_boy = list(range(0, 3))
+
     res = list(range(0, 3))
     BGR_template = cv2.split(template)
 
     cv2.imshow("test", frame_boy)
     cv2.waitKey()
-    cv2.imshow("test2", gray_template)
+    cv2.imshow("test2", template)
     cv2.waitKey()
 
     maxloc = points[14]
     maxloc_t = list(range(0, 3))
     while True:
         ret, frame_boy = capture.read()
+        frame_boy = cv2.resize(frame_boy,dsize = (0,0), fx = 0.5, fy = 0.5)
+        #frame_boy = cv2.resize(frame_boy, (480, 640))
+        #frame_boy = cv2.rotate(frame_boy, cv2.ROTATE_90_COUNTERCLOCKWISE)
         #cv2.TM_CCORR_NORMED, cv2.TM_CCOEFF, cv2.TM_CCOEFF_NORMED
         BGR_frame_boy = cv2.split(frame_boy)
 
-        for i in range(0, 3) :
-            res[i] = cv2.matchTemplate(BGR_frame_boy[i], BGR_template[i], cv2.TM_CCOEFF_NORMED)
+        for i in range(0, 3):
+            res[i] = cv2.matchTemplate(
+                BGR_frame_boy[i], BGR_template[i], cv2.TM_CCOEFF_NORMED)
         _, _, _, maxloc_t[0] = cv2.minMaxLoc(res[0])
         _, _, _, maxloc_t[1] = cv2.minMaxLoc(res[1])
         _, _, _, maxloc_t[2] = cv2.minMaxLoc(res[2])
 
         tmax = -3.0
-        
+
         n = maxloc[0]
         m = maxloc[1]
-        cv2.rectangle(frame_boy, (n-5, m - 5), (n + 5, m + 5), (255, 255, 255), 2)
-        '''
-        ----------------------------------------
-        '''
+        cv2.rectangle(frame_boy, (n-5, m - 5),
+                      (n + 5, m + 5), (255, 255, 255), 2)
         range_gradient = 40
-        
-        for i in range(n - temp_gradient - range_gradient, n - temp_gradient + range_gradient):
-            for j in range(m - temp_gradient - range_gradient, m - temp_gradient + range_gradient) :
+
+        for i in range(n - x_gradient - int(range_gradient/2), n - x_gradient + int(range_gradient/2)):
+            for j in range(m - y_gradient - range_gradient, m - y_gradient + range_gradient):
                 temp = res[0][j][i] + res[1][j][i] + res[2][j][i]
-                if tmax < temp :
+                if tmax < temp:
                     tmax = temp
-                    maxloc = (i + temp_gradient, j + temp_gradient)
-        cv2.rectangle(frame_boy, (maxloc[0] - temp_gradient, maxloc[1] - temp_gradient), (maxloc[0] + temp_gradient, maxloc[1] + temp_gradient), (255, 255, 255), 2)
-
-
-        cv2.rectangle(frame_boy, maxloc_t[0], (maxloc_t[0][0] + temp_gradient * 2, maxloc_t[0][1] + temp_gradient * 2), (255, 0, 0), 2)
-        cv2.rectangle(frame_boy, maxloc_t[1], (maxloc_t[1][0] + temp_gradient * 2, maxloc_t[1][1] + temp_gradient * 2), (0, 255, 0), 2)
-        cv2.rectangle(frame_boy, maxloc_t[2], (maxloc_t[2][0] + temp_gradient * 2, maxloc_t[2][1] + temp_gradient * 2), (0, 0, 255), 2)
-
-
+                    maxloc = (i + x_gradient, j + y_gradient)
+        
+        cv2.rectangle(frame_boy, (maxloc[0] - x_gradient, maxloc[1] - y_gradient),
+                      (maxloc[0] + x_gradient, maxloc[1] + y_gradient), (255, 255, 255), 2)
+        '''
+        cv2.rectangle(frame_boy, maxloc_t[0], (maxloc_t[0][0] + x_gradient *
+                      2, maxloc_t[0][1] + y_gradient * 2), (255, 0, 0), 2)
+        cv2.rectangle(frame_boy, maxloc_t[1], (maxloc_t[1][0] + x_gradient *
+                      2, maxloc_t[1][1] + y_gradient * 2), (0, 255, 0), 2)
+        cv2.rectangle(frame_boy, maxloc_t[2], (maxloc_t[2][0] + x_gradient *
+                      2, maxloc_t[2][1] + y_gradient * 2), (0, 0, 255), 2)
+        '''
         cv2.imshow("frame_boy", frame_boy)
         if cv2.waitKey(10) == 27:
             break
@@ -183,35 +191,11 @@ BODY_PARTS_MPI = {0: "Head", 1: "Neck", 2: "RShoulder", 3: "RElbow", 4: "RWrist"
 POSE_PAIRS_MPI = [[0, 1], [1, 2], [1, 5], [1, 14], [2, 3], [3, 4], [5, 6],
                   [6, 7], [8, 9], [9, 10], [11, 12], [12, 13], [14, 8], [14, 11]]
 
-BODY_PARTS_COCO = {0: "Nose", 1: "Neck", 2: "RShoulder", 3: "RElbow", 4: "RWrist",
-                   5: "LShoulder", 6: "LElbow", 7: "LWrist", 8: "RHip", 9: "RKnee",
-                   10: "RAnkle", 11: "LHip", 12: "LKnee", 13: "LAnkle", 14: "REye",
-                   15: "LEye", 16: "REar", 17: "LEar", 18: "Background"}
-
-POSE_PAIRS_COCO = [[0, 1], [0, 14], [0, 15], [1, 2], [1, 5], [1, 8], [1, 11], [2, 3], [3, 4],
-                   [5, 6], [6, 7], [8, 9], [9, 10], [12, 13], [11, 12], [14, 16], [15, 17]]
-
-BODY_PARTS_BODY_25 = {0: "Nose", 1: "Neck", 2: "RShoulder", 3: "RElbow", 4: "RWrist",
-                      5: "LShoulder", 6: "LElbow", 7: "LWrist", 8: "MidHip", 9: "RHip",
-                      10: "RKnee", 11: "RAnkle", 12: "LHip", 13: "LKnee", 14: "LAnkle",
-                      15: "REye", 16: "LEye", 17: "REar", 18: "LEar", 19: "LBigToe",
-                      20: "LSmallToe", 21: "LHeel", 22: "RBigToe", 23: "RSmallToe", 24: "RHeel", 25: "Background"}
-
-POSE_PAIRS_BODY_25 = [[0, 1], [0, 15], [0, 16], [1, 2], [1, 5], [1, 8], [8, 9], [8, 12], [9, 10], [12, 13], [2, 3],
-                      [3, 4], [5, 6], [6, 7], [10, 11], [13, 14], [
-                          15, 17], [16, 18], [14, 21], [19, 21], [20, 21],
-                      [11, 24], [22, 24], [23, 24]]
-
 # 신경 네트워크의 구조를 지정하는 prototxt 파일 (다양한 계층이 배열되는 방법 등)
-protoFile_mpi = "./models/pose/mpi/pose_deploy_linevec.prototxt"
-protoFile_mpi_faster = "./models/pose/mpi/pose_deploy_linevec_faster_4_stages.prototxt"
-protoFile_coco = "./models/pose/coco/pose_deploy_linevec.prototxt"
-protoFile_body_25 = "./models/pose/body_25/pose_deploy.prototxt"
+protoFile_mpi = "./Github/HCI/models/pose/mpi/pose_deploy_linevec.prototxt"
 
 # 훈련된 모델의 weight 를 저장하는 caffemodel 파일
-weightsFile_mpi = "./models/pose/mpi/pose_iter_160000.caffemodel"
-weightsFile_coco = "./models/pose/coco/pose_iter_440000.caffemodel"
-weightsFile_body_25 = "./models/pose/body_25/pose_iter_584000.caffemodel"
+weightsFile_mpi = "./Github/HCI/models/pose/mpi/pose_iter_160000.caffemodel"
 
 # 키포인트를 저장할 빈 리스트
 points = []
@@ -219,11 +203,3 @@ points = []
 output_keypoints_with_lines_video(proto_file=protoFile_mpi, weights_file=weightsFile_mpi,
                                   threshold=0.1, BODY_PARTS=BODY_PARTS_MPI, POSE_PAIRS=POSE_PAIRS_MPI)
 
-'''
-output_keypoints_with_lines_video(proto_file=protoFile_coco, weights_file=weightsFile_coco, 
-                                  threshold=0.1, BODY_PARTS=BODY_PARTS_COCO, POSE_PAIRS=POSE_PAIRS_COCO)
-'''
-'''
-output_keypoints_with_lines_video(proto_file=protoFile_body_25, weights_file=weightsFile_body_25,
-                                  threshold=0.1, BODY_PARTS=BODY_PARTS_BODY_25, POSE_PAIRS=POSE_PAIRS_BODY_25)
-'''
