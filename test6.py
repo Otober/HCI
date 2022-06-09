@@ -1,8 +1,14 @@
+import threading
 import cv2
 import time
 import random
+from matplotlib import image
 from sympy import false, true
-
+import threading
+import tkinter as tk
+from PIL import Image
+from PIL import ImageTk
+import datetime
 
 def f_dist(p1, p2):
     return (p1[0] - p2[0]) * (p1[0] - p2[0]) + (p1[1] - p2[1]) * (p1[1] - p2[1])
@@ -99,6 +105,7 @@ def output_keypoints_with_lines_video(proto_file, weights_file, threshold, BODY_
     #capture = cv2.VideoCapture(0)
     #capture = cv2.VideoCapture('http://192.168.0.5:4747/mjpegfeed')
     capture = cv2.VideoCapture('/home/kimdoyoung/Downloads/test3.mp4')
+    panel = None
     while(True):
         points.clear()
         ret, frame_boy = capture.read()
@@ -185,6 +192,18 @@ def output_keypoints_with_lines_video(proto_file, weights_file, threshold, BODY_
         cv2.rectangle(frame_boy, (maxloc[0] - x_gradient, maxloc[1] - y_gradient),
                       (maxloc[0] + x_gradient, maxloc[1] + y_gradient), (255, 255, 255), 2)
         print(str(maxloc[1] - y_gradient) + "             "  + str(standard))
+        image = cv2.cvtColor(frame_boy, cv2.COLOR_BGR2RGB)
+        image = Image.fromarray(image)
+        image = ImageTk.PhotoImage(image)
+
+        if panel is None : 
+            panel = tk.Label(image = image)
+            panel.image = image
+            panel.pack(side = "left")
+        else :
+            panel.configure(image = image)
+            panel.image = image
+
         if flag == False and maxloc[1] - y_gradient  < (standard + 30) - 15 :
             cnt = cnt + 1
             print("cnt : " + str(cnt))
@@ -223,7 +242,13 @@ if __name__ == "__main__" :
 
     # 키포인트를 저장할 빈 리스트
     points = []
-
+    '''
     output_keypoints_with_lines_video(proto_file=protoFile_mpi, weights_file=weightsFile_mpi,
                                     threshold=0.1, BODY_PARTS=BODY_PARTS_MPI, POSE_PAIRS=POSE_PAIRS_MPI)
+    '''
+    thread_img = threading.Thread(target = output_keypoints_with_lines_video, args = (protoFile_mpi, weightsFile_mpi, 0.1, BODY_PARTS_MPI, POSE_PAIRS_MPI))
+    thread_img.daemon = True
+    thread_img.start()
 
+    root = tk.Tk()
+    root.mainloop()
