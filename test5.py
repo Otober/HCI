@@ -97,11 +97,14 @@ def output_keypoints_with_lines_video(proto_file, weights_file, threshold, BODY_
     # net.setPreferableTarget(cv2.dnn.DNN_TARGET_CUDA)
     
     #capture = cv2.VideoCapture(0)
-    #capture = cv2.VideoCapture('http://192.168.0.5:4747/mjpegfeed')
-    capture = cv2.VideoCapture('/home/kimdoyoung/Downloads/test3.mp4')
+    capture = cv2.VideoCapture('http://192.168.0.89:4747/mjpegfeed?640x480')
+    #capture = cv2.VideoCapture('/home/kimdoyoung/Downloads/test3.mp4')
     while(True):
         points.clear()
         ret, frame_boy = capture.read()
+        cv2.imshow("test", frame_boy)
+        if cv2.waitKey(1) == ord('q'):  
+            break
         frame_boy = cv2.resize(frame_boy,dsize = (0,0), fx = 0.5, fy = 0.5)
         #frame_boy = cv2.resize(frame_boy, (480, 640))
         template = frame_boy.copy()

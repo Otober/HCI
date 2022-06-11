@@ -1,6 +1,7 @@
 import cv2
 
-cap = cv2.VideoCapture('http://192.168.220.63:4747/mjpegfeed')
+cap = cv2.VideoCapture(1)
+#cap = cv2.VideoCapture('http://192.168.0.89:4747/mjpegfeed?640x480')
 
 print('width :%d, height : %d' % (cap.get(3), cap.get(4)))
 

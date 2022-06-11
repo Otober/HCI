@@ -2,6 +2,8 @@ import threading
 import cv2
 import time
 import random
+from cv2 import imshow
+from cv2 import CAP_PROP_BUFFERSIZE
 from matplotlib import image
 from sympy import false, true
 import threading
@@ -9,12 +11,14 @@ import tkinter as tk
 from PIL import Image
 from PIL import ImageTk
 import datetime
+import numpy as np
 
 def f_dist(p1, p2):
     return (p1[0] - p2[0]) * (p1[0] - p2[0]) + (p1[1] - p2[1]) * (p1[1] - p2[1])
 
 
 def output_keypoints(frame, net, threshold, BODY_PARTS, now_frame, total_frame):
+    
     global points
 
     # 입력 이미지의 사이즈 정의
@@ -76,7 +80,6 @@ def output_keypoints(frame, net, threshold, BODY_PARTS, now_frame, total_frame):
                         0.6, (255, 0, 0), 1, lineType=cv2.LINE_AA)
 
             points.append(None)
-
     return frame
 
 
@@ -88,37 +91,47 @@ def output_keypoints_with_lines(frame, POSE_PAIRS):
 
 def output_keypoints_with_lines_video(proto_file, weights_file, threshold, BODY_PARTS, POSE_PAIRS):
     
-    '''
+    panel = None
+    
     stime = time.time()
     while(time.time() - stime < 3.0) :
         print(time.time() - stime)
-    '''
+        image = np.zeros((640, 480), np.uint8)
+        image = cv2.putText(image, str(time.time() - stime)[0:3], (240, 320), cv2.FONT_HERSHEY_PLAIN, 2, (255, 0, 0), 1, cv2.LINE_AA)
+        image = Image.fromarray(image)
+        image = ImageTk.PhotoImage(image)
 
+        if panel is None : 
+            panel = tk.Label(image = image)
+            panel.image = image
+            panel.pack(side = "right")
+        else :
+            panel.configure(image = image)
+            panel.image = image
 
-    # 네트워크 불러오기
     net = cv2.dnn.readNetFromCaffe(proto_file, weights_file)
-
-    # GPU 사용
-    # net.setPreferableBackend(cv2.dnn.DNN_BACKEND_CUDA)
-    # net.setPreferableTarget(cv2.dnn.DNN_TARGET_CUDA)
+    capture = cv2.VideoCapture(1)
+    capture.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+    #capture = cv2.VideoCapture('http://192.168.0.89:4747/mjpegfeed?640x480')
+    #capture = cv2.VideoCapture('/home/kimdoyoung/Downloads/test4.mp4')
     
-    #capture = cv2.VideoCapture(0)
-    #capture = cv2.VideoCapture('http://192.168.0.5:4747/mjpegfeed')
-    capture = cv2.VideoCapture('/home/kimdoyoung/Downloads/test3.mp4')
-    panel = None
     while(True):
         points.clear()
         ret, frame_boy = capture.read()
-        frame_boy = cv2.resize(frame_boy,dsize = (0,0), fx = 0.5, fy = 0.5)
-        #frame_boy = cv2.resize(frame_boy, (480, 640))
+        #frame_boy = cv2.resize(frame_boy,dsize = (0,0), fx = 0.5, fy = 0.5)
+        #frame_boy = cv2.resize(frame_boy, (640, 480))
+        cv2.imshow("test", frame_boy)
+        if cv2.waitKey(1) == ord('q'):  
+            break
         template = frame_boy.copy()
-        #frame_boy = cv2.rotate(frame_boy, cv2.ROTATE_90_COUNTERCLOCKWISE)
+        frame_boy = cv2.rotate(frame_boy, cv2.ROTATE_90_COUNTERCLOCKWISE)
         now_frame_boy = capture.get(cv2.CAP_PROP_POS_FRAMES)
         total_frame_boy = capture.get(cv2.CAP_PROP_FRAME_COUNT)
-
         frame_boy = output_keypoints(frame=frame_boy, net=net, threshold=threshold,
                                      BODY_PARTS=BODY_PARTS, now_frame=now_frame_boy, total_frame=total_frame_boy)
+        time.sleep(1)
         frame_boy = output_keypoints_with_lines(frame=frame_boy, POSE_PAIRS=POSE_PAIRS)
+        
         if points[5] and points[2] and points[11] and points[8] and points[4] and points[7] is not None:
             print(points[5])
             print(points[2])
@@ -133,7 +146,6 @@ def output_keypoints_with_lines_video(proto_file, weights_file, threshold, BODY_
                 points[11], points[8] = points[8], points[11]
             #template = template[min(points[5][1], points[2][1]): max(points[11][1], points[8][1]), points[5][0]: points[2][0]].copy()
             template = template[points[1][1]: max(points[11][1], points[8][1]), points[5][0]: points[2][0]].copy()
-            
             break
         print("None")
 
@@ -147,12 +159,12 @@ def output_keypoints_with_lines_video(proto_file, weights_file, threshold, BODY_
     res = list(range(0, 3)) 
     BGR_template = cv2.split(template)
 
-
+    '''
     cv2.imshow("test", frame_boy)
     cv2.waitKey()
     cv2.imshow("test2", template)
     cv2.waitKey()
-
+    '''
     maxloc = points[14]
     maxloc_t = list(range(0, 3))
     #stime = time.time()
@@ -160,15 +172,13 @@ def output_keypoints_with_lines_video(proto_file, weights_file, threshold, BODY_
     flag = False
     while True:
         ret, frame_boy = capture.read()
-        frame_boy = cv2.resize(frame_boy,dsize = (0,0), fx = 0.5, fy = 0.5)
-        #frame_boy = cv2.resize(frame_boy, (480, 640))
-        #frame_boy = cv2.rotate(frame_boy, cv2.ROTATE_90_COUNTERCLOCKWISE)
-        #cv2.TM_CCORR_NORMED, cv2.TM_CCOEFF, cv2.TM_CCOEFF_NORMED
+        #frame_boy = cv2.resize(frame_boy,dsize = (0,0), fx = 0.5, fy = 0.5)
+        frame_boy = cv2.resize(frame_boy, (640, 480))
+        frame_boy = cv2.rotate(frame_boy, cv2.ROTATE_90_COUNTERCLOCKWISE)
         BGR_frame_boy = cv2.split(frame_boy)
 
         for i in range(0, 3):
-            res[i] = cv2.matchTemplate(
-                BGR_frame_boy[i], BGR_template[i], cv2.TM_CCOEFF_NORMED)
+            res[i] = cv2.matchTemplate(BGR_frame_boy[i], BGR_template[i], cv2.TM_CCOEFF_NORMED)
         _, _, _, maxloc_t[0] = cv2.minMaxLoc(res[0])
         _, _, _, maxloc_t[1] = cv2.minMaxLoc(res[1])
         _, _, _, maxloc_t[2] = cv2.minMaxLoc(res[2])
@@ -192,6 +202,7 @@ def output_keypoints_with_lines_video(proto_file, weights_file, threshold, BODY_
         cv2.rectangle(frame_boy, (maxloc[0] - x_gradient, maxloc[1] - y_gradient),
                       (maxloc[0] + x_gradient, maxloc[1] + y_gradient), (255, 255, 255), 2)
         print(str(maxloc[1] - y_gradient) + "             "  + str(standard))
+
         image = cv2.cvtColor(frame_boy, cv2.COLOR_BGR2RGB)
         image = Image.fromarray(image)
         image = ImageTk.PhotoImage(image)
@@ -218,7 +229,7 @@ def output_keypoints_with_lines_video(proto_file, weights_file, threshold, BODY_
         cv2.rectangle(frame_boy, maxloc_t[2], (maxloc_t[2][0] + x_gradient *
                       2, maxloc_t[2][1] + y_gradient * 2), (0, 0, 255), 2)
         '''
-        cv2.imshow("frame_boy", frame_boy)
+        #cv2.imshow("frame_boy", frame_boy)
         if cv2.waitKey(10) == 27:
             break
 
