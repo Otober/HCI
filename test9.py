@@ -2,7 +2,7 @@ import cv2
 import time
 import random
 import numpy as np
-
+from playsound import playsound
 
 def f_dist(p1, p2):
     return (p1[0] - p2[0]) * (p1[0] - p2[0]) + (p1[1] - p2[1]) * (p1[1] - p2[1])
@@ -98,7 +98,7 @@ def output_keypoints_with_lines_video(proto_file, weights_file, threshold, BODY_
     
     #capture = cv2.VideoCapture(0)
     #capture = cv2.VideoCapture('http://192.168.0.89:4747/mjpegfeed?640x480')
-    capture = cv2.VideoCapture('/home/kimdoyoung/Downloads/test2.mp4')
+    capture = cv2.VideoCapture('/home/kimdoyoung/Downloads/test3.mp4')
     while(True):
         points.clear()
         ret, frame_boy = capture.read()
@@ -193,6 +193,7 @@ def output_keypoints_with_lines_video(proto_file, weights_file, threshold, BODY_
         print(str(maxloc[1] - y_gradient) + "             "  + str(standard))
         if flag == False and maxloc[1] - y_gradient  < (standard + 30) - 15 :
             cnt = cnt + 1
+            playsound("./Github/HCI/beef.mp3", block=False)
             print("cnt : " + str(cnt))
             flag = True
         elif flag == True and maxloc[1] - y_gradient > (standard + 30) + 15 :
@@ -220,6 +221,10 @@ def output_keypoints_with_lines_video(proto_file, weights_file, threshold, BODY_
         frame_cnt_time_img = cv2.vconcat([frame_boy, cnt_time_img])
         cv2.imshow("frame_cnt_time_img", frame_cnt_time_img)
         if cv2.waitKey(10) == 27:
+            break
+        if(time.time() - stime > 30.0) :
+            playsound("./Github/HCI/Wistle_long.mp3", block=False)
+            cv2.waitKey()
             break
 
     capture.release()
