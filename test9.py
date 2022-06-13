@@ -1,7 +1,7 @@
 import cv2
 import time
 import random
-from sympy import false, true
+import numpy as np
 
 
 def f_dist(p1, p2):
@@ -151,9 +151,9 @@ def output_keypoints_with_lines_video(proto_file, weights_file, threshold, BODY_
 
     maxloc = points[14]
     maxloc_t = list(range(0, 3))
-    #stime = time.time()
     cnt = 0
     flag = False
+    stime = time.time()
     while True:
         ret, frame_boy = capture.read()
         #frame_boy = cv2.resize(frame_boy,dsize = (0,0), fx = 0.5, fy = 0.5)
@@ -206,6 +206,19 @@ def output_keypoints_with_lines_video(proto_file, weights_file, threshold, BODY_
                       2, maxloc_t[2][1] + y_gradient * 2), (0, 0, 255), 2)
         '''
         cv2.imshow("frame_boy", frame_boy)
+
+        cnt_img = np.zeros((80, 240, 3), np.uint8)
+        time_img = np.zeros((80, 240, 3), np.uint8)
+        cv2.putText(cnt_img, str(cnt), (100, 50),
+                    cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
+        cv2.putText(time_img, str(round(time.time() - stime, 1
+                                        )), (100, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
+        cnt_img = np.reshape(cnt_img, (80, 240, 3))
+        time_img = np.reshape(time_img, (80, 240, 3))
+
+        cnt_time_img = cv2.hconcat([cnt_img, time_img])
+        frame_cnt_time_img = cv2.vconcat([frame_boy, cnt_time_img])
+        cv2.imshow("frame_cnt_time_img", frame_cnt_time_img)
         if cv2.waitKey(10) == 27:
             break
 

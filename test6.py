@@ -111,20 +111,22 @@ def output_keypoints_with_lines_video(proto_file, weights_file, threshold, BODY_
 
     net = cv2.dnn.readNetFromCaffe(proto_file, weights_file)
     capture = cv2.VideoCapture(1)
-    capture.set(cv2.CAP_PROP_BUFFERSIZE, 1)
-    #capture = cv2.VideoCapture('http://192.168.0.89:4747/mjpegfeed?640x480')
-    #capture = cv2.VideoCapture('/home/kimdoyoung/Downloads/test4.mp4')
     
+    #capture = cv2.VideoCapture('http://192.168.0.5:4747/mjpegfeed?640x480')
+    #capture = cv2.VideoCapture('/home/kimdoyoung/Downloads/test4.mp4')
+    capture.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+
     while(True):
         points.clear()
         ret, frame_boy = capture.read()
         #frame_boy = cv2.resize(frame_boy,dsize = (0,0), fx = 0.5, fy = 0.5)
         #frame_boy = cv2.resize(frame_boy, (640, 480))
-        cv2.imshow("test", frame_boy)
+        
         if cv2.waitKey(1) == ord('q'):  
             break
         template = frame_boy.copy()
         frame_boy = cv2.rotate(frame_boy, cv2.ROTATE_90_COUNTERCLOCKWISE)
+        cv2.imshow("test", frame_boy)
         now_frame_boy = capture.get(cv2.CAP_PROP_POS_FRAMES)
         total_frame_boy = capture.get(cv2.CAP_PROP_FRAME_COUNT)
         frame_boy = output_keypoints(frame=frame_boy, net=net, threshold=threshold,
@@ -173,7 +175,7 @@ def output_keypoints_with_lines_video(proto_file, weights_file, threshold, BODY_
     while True:
         ret, frame_boy = capture.read()
         #frame_boy = cv2.resize(frame_boy,dsize = (0,0), fx = 0.5, fy = 0.5)
-        frame_boy = cv2.resize(frame_boy, (640, 480))
+        #$frame_boy = cv2.resize(frame_boy, (640, 480))
         frame_boy = cv2.rotate(frame_boy, cv2.ROTATE_90_COUNTERCLOCKWISE)
         BGR_frame_boy = cv2.split(frame_boy)
 
