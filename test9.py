@@ -81,14 +81,6 @@ def output_keypoints_with_lines(frame, POSE_PAIRS):
 
 
 def output_keypoints_with_lines_video(proto_file, weights_file, threshold, BODY_PARTS, POSE_PAIRS):
-    
-    '''
-    stime = time.time()
-    while(time.time() - stime < 3.0) :
-        print(time.time() - stime)
-    '''
-
-
     # 네트워크 불러오기
     net = cv2.dnn.readNetFromCaffe(proto_file, weights_file)
 
@@ -96,26 +88,39 @@ def output_keypoints_with_lines_video(proto_file, weights_file, threshold, BODY_
     # net.setPreferableBackend(cv2.dnn.DNN_BACKEND_CUDA)
     # net.setPreferableTarget(cv2.dnn.DNN_TARGET_CUDA)
     
-    #capture = cv2.VideoCapture(0)
-    #capture = cv2.VideoCapture('http://192.168.0.89:4747/mjpegfeed?640x480')
-    capture = cv2.VideoCapture('/home/kimdoyoung/Downloads/test3.mp4')
+    capture = cv2.VideoCapture(0)
+    #capture = cv2.VideoCapture('http://192.168.200.166:4747/mjpegfeed?640x480')
+    #capture = cv2.VideoCapture('/home/kimdoyoung/Downloads/test3.mp4')
+
+    stime = time.time()
+    while True :
+        wait_img = np.zeros((80, 240, 3), np.uint8)
+        cv2.putText(wait_img, str(round(time.time() - stime, 1)), (100, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
+        wait_img = np.reshape(wait_img, (80, 240, 3))
+        cv2.imshow("wait_img", wait_img)
+        if cv2.waitKey(10) == 27:
+            break
+        if time.time() - stime > 3.0:
+            cv2.destroyWindow('wait_img')
+            break  
+
     while(True):
         points.clear()
         ret, frame_boy = capture.read()
-        cv2.imshow("test", frame_boy)
+        #cv2.imshow("test", frame_boy)
         if cv2.waitKey(1) == ord('q'):  
             break
         #frame_boy = cv2.resize(frame_boy,dsize = (0,0), fx = 0.5, fy = 0.5)
+        frame_boy = cv2.rotate(frame_boy, cv2.ROTATE_90_COUNTERCLOCKWISE)
         frame_boy = cv2.resize(frame_boy, (480, 640))
         template = frame_boy.copy()
-        #frame_boy = cv2.rotate(frame_boy, cv2.ROTATE_90_COUNTERCLOCKWISE)
         now_frame_boy = capture.get(cv2.CAP_PROP_POS_FRAMES)
         total_frame_boy = capture.get(cv2.CAP_PROP_FRAME_COUNT)
 
         frame_boy = output_keypoints(frame=frame_boy, net=net, threshold=threshold,
                                      BODY_PARTS=BODY_PARTS, now_frame=now_frame_boy, total_frame=total_frame_boy)
         frame_boy = output_keypoints_with_lines(frame=frame_boy, POSE_PAIRS=POSE_PAIRS)
-        if points[5] and points[2] and points[11] and points[8] and points[4] and points[7] is not None:
+        if points[5] and points[2] and points[11] and points[8] and points[4] and points[7] is not None :
             print(points[5])
             print(points[2])
             print(points[11])
@@ -129,8 +134,15 @@ def output_keypoints_with_lines_video(proto_file, weights_file, threshold, BODY_
                 points[11], points[8] = points[8], points[11]
             #template = template[min(points[5][1], points[2][1]): max(points[11][1], points[8][1]), points[5][0]: points[2][0]].copy()
             template = template[points[1][1]: max(points[11][1], points[8][1]), points[5][0]: points[2][0]].copy()
-            
+            cv2.destroyAllWindows()
             break
+        else :
+            wait_img = np.zeros((80, 240, 3), np.uint8)
+            cv2.putText(wait_img, "please wait", (30, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
+            wait_img = np.reshape(wait_img, (80, 240, 3))
+            cv2.imshow("wait_img", wait_img)
+            if cv2.waitKey(10) == 27:
+                break
         print("None")
 
     #y_gradient = int((max(points[11][1], points[8][1]) - min(points[5][1], points[2][1])) / 2)
@@ -143,22 +155,30 @@ def output_keypoints_with_lines_video(proto_file, weights_file, threshold, BODY_
     res = list(range(0, 3)) 
     BGR_template = cv2.split(template)
 
-
+    '''
     cv2.imshow("test", frame_boy)
     cv2.waitKey()
     cv2.imshow("test2", template)
     cv2.waitKey()
+    '''
 
     maxloc = points[14]
     maxloc_t = list(range(0, 3))
     cnt = 0
     flag = False
+    end_flag = True
+    stime = time.time()
+    playsound("./Github/HCI/Wistle_long.mp3", block=False)
+    while True :
+        if time.time() - stime > 1.5 :
+            break
     stime = time.time()
     while True:
         ret, frame_boy = capture.read()
         #frame_boy = cv2.resize(frame_boy,dsize = (0,0), fx = 0.5, fy = 0.5)
+        frame_boy = cv2.rotate(frame_boy, cv2.ROTATE_90_COUNTERCLOCKWISE)
         frame_boy = cv2.resize(frame_boy, (480, 640))
-        #frame_boy = cv2.rotate(frame_boy, cv2.ROTATE_90_COUNTERCLOCKWISE)
+        test = frame_boy.copy()
         #cv2.TM_CCORR_NORMED, cv2.TM_CCOEFF, cv2.TM_CCOEFF_NORMED
         BGR_frame_boy = cv2.split(frame_boy)
 
@@ -191,12 +211,12 @@ def output_keypoints_with_lines_video(proto_file, weights_file, threshold, BODY_
                       (maxloc[0] + x_gradient, maxloc[1] + y_gradient), (255, 255, 255), 2)
         
         print(str(maxloc[1] - y_gradient) + "             "  + str(standard))
-        if flag == False and maxloc[1] - y_gradient  < (standard + 30) - 15 :
+        if flag == False and maxloc[1] - y_gradient  < (standard + 30) - 15 and time.time() - stime < 30.0:
             cnt = cnt + 1
             playsound("./Github/HCI/beef.mp3", block=False)
             print("cnt : " + str(cnt))
             flag = True
-        elif flag == True and maxloc[1] - y_gradient > (standard + 30) + 15 :
+        elif flag == True and maxloc[1] - y_gradient > (standard + 30) + 15 and time.time() - stime < 30.0:
             flag = False
         '''
         cv2.rectangle(frame_boy, maxloc_t[0], (maxloc_t[0][0] + x_gradient *
@@ -206,26 +226,37 @@ def output_keypoints_with_lines_video(proto_file, weights_file, threshold, BODY_
         cv2.rectangle(frame_boy, maxloc_t[2], (maxloc_t[2][0] + x_gradient *
                       2, maxloc_t[2][1] + y_gradient * 2), (0, 0, 255), 2)
         '''
-        cv2.imshow("frame_boy", frame_boy)
+        #cv2.imshow("frame_boy", frame_boy)
+
+        
 
         cnt_img = np.zeros((80, 240, 3), np.uint8)
         time_img = np.zeros((80, 240, 3), np.uint8)
-        cv2.putText(cnt_img, str(cnt), (100, 50),
+
+        if time.time() - stime > 30.0:
+            frame_boy = test.copy()
+            cv2.putText(cnt_img, str(cnt), (100, 50),
                     cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
-        cv2.putText(time_img, str(round(time.time() - stime, 1
+            cv2.putText(time_img, str(round(30.0, 1
+                                        )), (100, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
+        else :
+            cv2.putText(cnt_img, str(cnt), (100, 50),
+                    cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
+            cv2.putText(time_img, str(round(time.time() - stime, 1
                                         )), (100, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
         cnt_img = np.reshape(cnt_img, (80, 240, 3))
         time_img = np.reshape(time_img, (80, 240, 3))
-
+        
         cnt_time_img = cv2.hconcat([cnt_img, time_img])
         frame_cnt_time_img = cv2.vconcat([frame_boy, cnt_time_img])
         cv2.imshow("frame_cnt_time_img", frame_cnt_time_img)
         if cv2.waitKey(10) == 27:
             break
-        if(time.time() - stime > 30.0) :
+            
+        if time.time() - stime > 30.0 and end_flag:
+            end_flag = False
             playsound("./Github/HCI/Wistle_long.mp3", block=False)
-            cv2.waitKey()
-            break
+            
 
     capture.release()
     cv2.destroyAllWindows()
